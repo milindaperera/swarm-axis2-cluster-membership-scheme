@@ -155,9 +155,17 @@ public class SwarmMembershipScheme implements HazelcastMembershipScheme {
 
     private void addMembersFromDNS(List<String> serviceTaskNames) throws ClusteringFault {
         for (String taskName : serviceTaskNames) {
-            taskName = taskName.trim();
+            taskName = "tasks." + taskName.trim();
             LOG.info("Discovering nodes in service : " + taskName);
-            InetAddress[] inetAddress = dnsLookup(taskName);
+            InetAddress[] inetAddress = null;
+            try {
+                inetAddress = dnsLookup(taskName);
+            } catch (UnknownHostException e) {
+                // This may happen in runtime, this will happen mainly due to configuration issue which user have
+                // added to unknown service name to dockerServiceList parameter or specified service is not up and
+                // running properly
+                throw new ClusteringFault("Error occurred while DNS lookup for node discovery in service: " + taskName, e);
+            }
             for (InetAddress nodeAddress : inetAddress) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Node details = HostAddress:" + nodeAddress.getHostAddress() +
@@ -172,14 +180,10 @@ public class SwarmMembershipScheme implements HazelcastMembershipScheme {
     }
 
 
-    private InetAddress[] dnsLookup(String dnsHost) throws ClusteringFault {
-        try {
-            InetAddress[]  inetAddress = InetAddress.getAllByName(dnsHost);
-            LOG.info("Number of members in Docker Swarm service " + dnsHost + ": " + inetAddress.length);
-            return inetAddress;
-        } catch (UnknownHostException e) {
-            throw new ClusteringFault ("Error occurred while DNS Lookup for container discovery", e);
-        }
+    private InetAddress[] dnsLookup(String dnsHost) throws UnknownHostException {
+        InetAddress[]  inetAddress = InetAddress.getAllByName(dnsHost);
+        LOG.info("Number of members in Docker Swarm service " + dnsHost + ": " + inetAddress.length);
+        return inetAddress;
     }
 
     public static String getIpAddress(String networkInterfaceName) throws SocketException {

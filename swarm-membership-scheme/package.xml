@@ -38,11 +38,11 @@
             <filtered>true</filtered>
             <fileMode>644</fileMode>
         </file>
-        <file>
+        <!--file>
             <source>${project.basedir}/README.md</source>
             <outputDirectory>/</outputDirectory>
             <filtered>true</filtered>
             <fileMode>644</fileMode>
-        </file>
+        </file-->
     </files>
 </assembly>
